@@ -32,6 +32,9 @@ class Lexer(object):
     newline = '\n'
     # comment_marker = '#'
     delimiters = ['.', ':', ';', '(', ')', '=', '-', '+', ',', '[', ']', '<', '>']
+    double_delimiter = [':=', '<>']
+    match = ''
+    char = ''
 
     def __init__(self, code):
         super(Lexer, self).__init__()
@@ -53,15 +56,15 @@ class Lexer(object):
         return self.code[self.cursor - 1]
 
     def tokenise(self):
-        char = self.get_next_char()
-        while char != Lexer.eof_marker:
+        self.char = self.get_next_char()
+        while self.char != Lexer.eof_marker:
 
             # ignore whitespace
-            if char in Lexer.whitespace:
-                if char in Lexer.newline:
+            if self.char in Lexer.whitespace:
+                if self.char in Lexer.newline:
                     self.line_no += 1
                     self.line_pos = 0
-                char = self.get_next_char()
+                self.char = self.get_next_char()
 
             # comment
             # elif char in Lexer.comment_marker:
@@ -69,53 +72,53 @@ class Lexer(object):
             #         char = self.get_next_char()
 
             # identifier token
-            elif char in string.ascii_letters:
-                match = char
-                char = self.get_next_char()
-                while char in (string.ascii_letters + string.digits):
-                    match += char
-                    char = self.get_next_char()
-                token = Token(Token.Identifier, match, self.lines[self.line_no], self.line_no, self.line_pos)
+            elif self.char in string.ascii_letters:
+                self.match = self.char
+                self.char = self.get_next_char()
+                while self.char in (string.ascii_letters + string.digits):
+                    self.match += self.char
+                    self.char = self.get_next_char()
+                token = Token(Token.Identifier, self.match, self.lines[self.line_no], self.line_no, self.line_pos)
 
-                if match in Token.keywords:
+                if self.match in Token.keywords:
                     token.type = Token.Keyword
 
                 self.tokens.append(token)
 
             # Integer token
-            elif char in string.digits:
-                match = char
-                char = self.get_next_char()
-                while char in string.digits:
-                    match += char
-                    char = self.get_next_char()
+            elif self.char in string.digits:
+                self.match = self.char
+                self.char = self.get_next_char()
+                while self.char in string.digits:
+                    self.match += self.char
+                    self.char = self.get_next_char()
 
-                if char not in (self.delimiters + [' ']):
+                if self.char not in (self.delimiters + [' ', self.newline]):
                     raise ValueError()
 
-                token = Token(Token.Integer, match, self.lines[self.line_no], self.line_no, self.line_pos)
+                token = Token(Token.Integer, self.match, self.lines[self.line_no], self.line_no, self.line_pos)
                 self.tokens.append(token)
-            elif char == "'":
-                match = char
-                char = self.get_next_char()
-                while char != "'":
-                    match += char
-                    char = self.get_next_char()
-                match += char
-                self.tokens.append(Token(Token.Literal, match + char, self.lines[self.line_no], self.line_no,
+            elif self.char == "'":
+                self.match = self.char
+                self.char = self.get_next_char()
+                while self.char != "'":
+                    self.match += self.char
+                    self.char = self.get_next_char()
+                self.match += self.char
+                self.tokens.append(Token(Token.Literal, self.match + self.char, self.lines[self.line_no], self.line_no,
                                          self.line_pos))
-                char = self.get_next_char()
+                self.char = self.get_next_char()
 
-            elif char in self.delimiters:
-                match = char
-                char = self.get_next_char()
+            elif self.char in self.delimiters:
+                self.match = self.char
+                self.char = self.get_next_char()
 
-                if (match + char) in [':=', '<>']:
-                    token = Token(Token.DoubleDelimiter, match + char, self.lines[self.line_no], self.line_no,
+                if (self.match + self.char) in self.double_delimiter:
+                    token = Token(Token.DoubleDelimiter, self.match + self.char, self.lines[self.line_no], self.line_no,
                                   self.line_pos)
-                    char = self.get_next_char()
+                    self.char = self.get_next_char()
                 else:
-                    token = Token(Token.Delimiter, match, self.lines[self.line_no], self.line_no,
+                    token = Token(Token.Delimiter, self.match, self.lines[self.line_no], self.line_no,
                                   self.line_pos)
                 self.tokens.append(token)
 
@@ -140,11 +143,20 @@ class Lexer(object):
 
             else:
                 raise ValueError(
-                    'Unexpected character found: {0}:{1} -> {2}\n{3}'.format(self.line_no + 1, self.line_pos + 1, char,
+                    'Unexpected character found: {0}:{1} -> {2}\n{3}'.format(self.line_no + 1, self.line_pos + 1, self.char,
                                                                              self.lines[self.line_no]))
 
         # end of file token
-        token = Token(Token.eof, char, None, self.line_no, self.line_pos)
+        token = Token(Token.eof, self.char, None, self.line_no, self.line_pos)
         self.tokens.append(token)
 
         return self.tokens
+
+    def unrecognized_lexem(self, lexem):
+        self.char = self.get_next_char()
+        while self.char not in (self.delimiters + [' ']):
+
+
+        with open('./lexem_errors.txt', 'w+') as file:
+            file.truncate()
+            file.write("'" + lexem + "' unrecognized lexem.")

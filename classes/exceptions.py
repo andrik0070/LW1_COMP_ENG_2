@@ -1,0 +1,2 @@
+class UnrecognizedLexem(Exception):
+    pass
