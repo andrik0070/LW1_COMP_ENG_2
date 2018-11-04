@@ -23,7 +23,8 @@ class Token(object):
         self.line_no = line_no
 
     def __str__(self):
-        return '{0}:{1}'.format(self.line_no + 1, self.line_pos).ljust(10) + self.type.ljust(15) + self.value
+        # return '{0}:{1}'.format(self.line_no + 1, self.line_pos).ljust(10) + self.type.ljust(15) + self.value
+        return '{0}:{1}'.format(self.line_no + 1, self.line_pos) + ',' + self.type + ',' + self.value
 
 
 class Lexer(object):
@@ -38,6 +39,9 @@ class Lexer(object):
 
     def __init__(self, code):
         super(Lexer, self).__init__()
+
+        with open('./lexem_errors.txt', 'w+') as file:
+            file.truncate()
 
         self.code = code
         self.cursor = 0
@@ -94,7 +98,7 @@ class Lexer(object):
                     self.char = self.get_next_char()
 
                 if self.char not in (self.delimiters + [' ', self.newline]):
-                    raise ValueError()
+                    self.unrecognized_lexem()
 
                 token = Token(Token.Integer, self.match, self.lines[self.line_no], self.line_no, self.line_pos)
                 self.tokens.append(token)
@@ -122,41 +126,19 @@ class Lexer(object):
                                   self.line_pos)
                 self.tokens.append(token)
 
-
-            # operators
-            # elif char in '+-*/=<>':
-            #     token = Token(Token.operator, char, self.lines[self.line_no], self.line_no, self.line_pos)
-            #     self.tokens.append(token)
-            #     char = self.get_next_char()
-            #
-            # # start block
-            # elif char == '{':
-            #     token = Token(Token.block_start, char, self.lines[self.line_no], self.line_no, self.line_pos)
-            #     self.tokens.append(token)
-            #     char = self.get_next_char()
-            #
-            # # end block
-            # elif char == '}':
-            #     token = Token(Token.block_end, char, self.lines[self.line_no], self.line_no, self.line_pos)
-            #     self.tokens.append(token)
-            #     char = self.get_next_char()
-
             else:
                 raise ValueError(
-                    'Unexpected character found: {0}:{1} -> {2}\n{3}'.format(self.line_no + 1, self.line_pos + 1, self.char,
+                    'Unexpected character found: {0}:{1} -> {2}\n{3}'.format(self.line_no + 1, self.line_pos + 1,
+                                                                             self.char,
                                                                              self.lines[self.line_no]))
-
-        # end of file token
-        token = Token(Token.eof, self.char, None, self.line_no, self.line_pos)
-        self.tokens.append(token)
 
         return self.tokens
 
-    def unrecognized_lexem(self, lexem):
+    def unrecognized_lexem(self):
         self.char = self.get_next_char()
         while self.char not in (self.delimiters + [' ']):
-
+            self.match += self.char
+            self.char = self.get_next_char()
 
         with open('./lexem_errors.txt', 'w+') as file:
-            file.truncate()
-            file.write("'" + lexem + "' unrecognized lexem.")
+            file.write("'" + self.match + "' unrecognized lexem.\n")
