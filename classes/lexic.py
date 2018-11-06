@@ -40,8 +40,8 @@ class Lexer(object):
     def __init__(self, code):
         super(Lexer, self).__init__()
 
-        with open('./lexem_errors.txt', 'w+') as file:
-            file.truncate()
+        with open('./lexem_errors.txt', 'w') as file:
+            pass
 
         self.code = code
         self.cursor = 0
@@ -82,12 +82,16 @@ class Lexer(object):
                 while self.char in (string.ascii_letters + string.digits):
                     self.match += self.char
                     self.char = self.get_next_char()
-                token = Token(Token.Identifier, self.match, self.lines[self.line_no], self.line_no, self.line_pos)
 
-                if self.match in Token.keywords:
-                    token.type = Token.Keyword
+                if self.char not in (self.delimiters + [' ', Lexer.newline, Lexer.eof_marker]):
+                    self.unrecognized_lexem()
+                else:
+                    token = Token(Token.Identifier, self.match, self.lines[self.line_no], self.line_no, self.line_pos)
 
-                self.tokens.append(token)
+                    if self.match in Token.keywords:
+                        token.type = Token.Keyword
+
+                    self.tokens.append(token)
 
             # Integer token
             elif self.char in string.digits:
@@ -127,18 +131,20 @@ class Lexer(object):
                 self.tokens.append(token)
 
             else:
-                raise ValueError(
-                    'Unexpected character found: {0}:{1} -> {2}\n{3}'.format(self.line_no + 1, self.line_pos + 1,
-                                                                             self.char,
-                                                                             self.lines[self.line_no]))
+                self.match = self.char
+                self.unrecognized_lexem()
+                # raise ValueError(
+                #     'Unexpected character found: {0}:{1} -> {2}\n{3}'.format(self.line_no + 1, self.line_pos + 1,
+                #                                                              self.char,
+                #                                                              self.lines[self.line_no]))
 
         return self.tokens
 
     def unrecognized_lexem(self):
         self.char = self.get_next_char()
-        while self.char not in (self.delimiters + [' ']):
+        while self.char not in (self.delimiters + [' ', Lexer.newline, Lexer.eof_marker]):
             self.match += self.char
             self.char = self.get_next_char()
 
-        with open('./lexem_errors.txt', 'w+') as file:
+        with open('./lexem_errors.txt', 'a') as file:
             file.write("'" + self.match + "' unrecognized lexem.\n")

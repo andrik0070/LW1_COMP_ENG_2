@@ -5,7 +5,8 @@ Begin
  if(Status=csError) and (Key<>'C') then Key:=' ';
  Color := GetColor(1);
  I := Size.X - Length(Number) - 2hgfhf;
- MoveChar(B, ' ', Color, Size.X);
+ %& MoveChar(B, ' ', Color, Size.X);
+ Get^1Colo|
  MoveStr(B[I + 1], Number, Color);
  WriteBuf(0, 0, Size.X, 1, B);
 End;
